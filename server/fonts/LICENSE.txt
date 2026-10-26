@@ -1,0 +1,2 @@
+Inter, Manrope and Source Serif 4 are licensed under the SIL Open Font License 1.1.
+https://openfontlicense.org — merged from the @fontsource latin + latin-ext subsets.
