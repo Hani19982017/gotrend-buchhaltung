@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 /**
  * Shrinks large photos before upload (phones produce 4–12 MB images).
  * PDFs and images the browser cannot decode (e.g. HEIC on Android) are passed through unchanged.
@@ -35,7 +36,7 @@ export async function logoToPng(file: File): Promise<File> {
     img.decoding = 'async';
     await new Promise<void>((res, rej) => {
       img.onload = () => res();
-      img.onerror = () => rej(new Error('ما قدرت إفتح الصورة'));
+      img.onerror = () => rej(new Error(tr('ما قدرت إفتح الصورة')));
       img.src = url;
     });
     const isSvg = file.type.includes('svg');
@@ -50,7 +51,7 @@ export async function logoToPng(file: File): Promise<File> {
     canvas.height = h;
     canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
     const blob: Blob | null = await new Promise((r) => canvas.toBlob(r, 'image/png'));
-    if (!blob) throw new Error('ما قدرت حوّل اللوغو');
+    if (!blob) throw new Error(tr('ما قدرت حوّل اللوغو'));
     return new File([blob], 'logo.png', { type: 'image/png' });
   } finally {
     URL.revokeObjectURL(url);

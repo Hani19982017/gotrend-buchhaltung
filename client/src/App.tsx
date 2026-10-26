@@ -13,6 +13,7 @@ import ClientsPage from './pages/Clients';
 import ClientDetail from './pages/ClientDetail';
 import SettingsPage from './pages/Settings';
 import { currentYm } from './lib/format';
+import { tr } from './lib/i18n';
 
 const InvoiceEditor = lazy(() => import('./pages/InvoiceEditor'));
 const InvoiceView = lazy(() => import('./pages/InvoiceView'));
@@ -37,7 +38,7 @@ export default function App() {
   }, [auth.data, loc.pathname, nav]);
 
   if (auth.isLoading) return <Loading />;
-  if (auth.isError) return <div className="p-6 text-center text-red-600">ما قدرت اتصل بالخادم. جرّب تحدّث الصفحة.</div>;
+  if (auth.isError) return <div className="p-6 text-center text-red-600">{tr('ما قدرت اتصل بالخادم. جرّب تحدّث الصفحة.')}</div>;
 
   return (
     <Suspense fallback={<Loading />}>

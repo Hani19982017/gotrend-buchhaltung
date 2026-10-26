@@ -3,6 +3,7 @@ import * as pdfjs from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { Loader2 } from 'lucide-react';
 import { cx } from './ui';
+import { tr } from '../lib/i18n';
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -50,7 +51,7 @@ export default function PdfPreview({ blob, loading, className }: { blob: Blob | 
         }));
         task.destroy();
       } catch (e: any) {
-        if (!cancelled) setErr('ما قدرت إعرض المعاينة');
+        if (!cancelled) setErr(tr('ما قدرت إعرض المعاينة'));
         console.error(e);
       } finally {
         if (!cancelled) setRendering(false);
@@ -66,7 +67,7 @@ export default function PdfPreview({ blob, loading, className }: { blob: Blob | 
       </div>
       {(loading || rendering) && (
         <div className="pointer-events-none absolute top-3 start-3 flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-gray-600 shadow">
-          <Loader2 className="size-3.5 animate-spin" /> تحديث
+          <Loader2 className="size-3.5 animate-spin" /> {tr('تحديث')}
         </div>
       )}
       {err && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{err}</div>}

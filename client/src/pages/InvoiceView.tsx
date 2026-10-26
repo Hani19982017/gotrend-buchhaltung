@@ -5,8 +5,9 @@ import { Download, Share2, CheckCircle2, Undo2, PencilLine, Ban, Copy, FileCheck
 import { api, apiBlob, downloadFrom, shareBlob } from '../lib/api';
 import type { Invoice } from '../lib/types';
 import { clientName, fmtDate, statusInfo, todayIso, KIND_LABEL } from '../lib/format';
-import { Button, Card, Loading, ErrorBox, PageHeader, Badge, Money, useUi, Sheet, Field } from '../components/ui';
+import { Rich, Button, Card, Loading, ErrorBox, PageHeader, Badge, Money, useUi, Sheet, Field } from '../components/ui';
 import PdfPreview from '../components/PdfPreview';
+import { tr } from '../lib/i18n';
 
 export default function InvoiceView() {
   const { id } = useParams();
@@ -28,7 +29,7 @@ export default function InvoiceView() {
   }, [inv?.id, inv?.status, inv?.pdf_file, isFetching]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) return <Loading />;
-  if (error || !inv) return <><PageHeader back="/invoices" title="فاتورة" /><ErrorBox error={error} /></>;
+  if (error || !inv) return <><PageHeader back="/invoices" title={tr('فاتورة')} /><ErrorBox error={error} /></>;
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ['invoice', id] });
@@ -71,40 +72,40 @@ export default function InvoiceView() {
     window.location.href = `mailto:${inv.client?.email || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyTxt)}`;
   };
 
-  const markPaid = () => act('paid', () => api(`/invoices/${inv.id}/paid`, { body: { date: paidDate } }), 'تمام، الفاتورة مدفوعة').then(() => setPaidOpen(false));
-  const markUnpaid = () => act('unpaid', () => api(`/invoices/${inv.id}/paid`, { body: { paid: false } }), 'رجعت غير مدفوعة');
+  const markPaid = () => act('paid', () => api(`/invoices/${inv.id}/paid`, { body: { date: paidDate } }), tr('تمام، الفاتورة مدفوعة')).then(() => setPaidOpen(false));
+  const markUnpaid = () => act('unpaid', () => api(`/invoices/${inv.id}/paid`, { body: { paid: false } }), tr('رجعت غير مدفوعة'));
 
   const cancel = async () => {
     const reason = await confirm({
-      title: 'إلغاء الفاتورة',
-      text: <>رح تنعمل <b>فاتورة إلغاء</b> برقم جديد بتلغي هالفاتورة بالكامل. الفاتورة الأصلية بتضل محفوظة متل ما هي (هيك بيطلب القانون).</>,
-      input: { label: 'سبب الإلغاء', placeholder: 'مثلاً: الطلب انلغى', required: true },
-      confirm: 'إلغاء الفاتورة', danger: true,
+      title: tr('إلغاء الفاتورة'),
+      text: <Rich text={tr('رح تنعمل **فاتورة إلغاء** برقم جديد بتلغي هالفاتورة بالكامل. الفاتورة الأصلية بتضل محفوظة متل ما هي (هيك بيطلب القانون).')} />,
+      input: { label: tr('سبب الإلغاء'), placeholder: tr('مثلاً: الطلب انلغى'), required: true },
+      confirm: tr('إلغاء الفاتورة|confirm'), danger: true,
     });
     if (!reason) return;
-    const r: any = await act('cancel', () => api(`/invoices/${inv.id}/cancel`, { body: { reason } }), 'انعملت فاتورة الإلغاء');
+    const r: any = await act('cancel', () => api(`/invoices/${inv.id}/cancel`, { body: { reason } }), tr('انعملت فاتورة الإلغاء'));
     if (r?.stornoId) nav(`/invoices/${r.stornoId}`);
   };
   const correct = async () => {
     const reason = await confirm({
-      title: 'تصحيح الفاتورة',
-      text: <>الطريقة القانونية للتعديل: البرنامج بيعمل <b>فاتورة إلغاء</b> للقديمة، وبيفتحلك <b>نسخة جديدة</b> فيك تعدّلها وتصدرها برقم جديد.</>,
-      input: { label: 'شو بدك تصحح؟', placeholder: 'مثلاً: السعر غلط', required: false },
-      confirm: 'تصحيح',
+      title: tr('تصحيح الفاتورة'),
+      text: <Rich text={tr('الطريقة القانونية للتعديل: البرنامج بيعمل **فاتورة إلغاء** للقديمة، وبيفتحلك **نسخة جديدة** فيك تعدّلها وتصدرها برقم جديد.')} />,
+      input: { label: tr('شو بدك تصحح؟'), placeholder: tr('مثلاً: السعر غلط'), required: false },
+      confirm: tr('تصحيح'),
     });
     if (!reason) return;
     const r: any = await act('correct', () => api(`/invoices/${inv.id}/correct`, { body: { reason: reason === 'ok' ? '' : reason } }));
     if (r?.newId) nav(`/invoices/${r.newId}/edit`);
   };
   const duplicate = async () => {
-    const r: any = await act('dup', () => api(`/invoices/${inv.id}/duplicate`, { method: 'POST' }), 'انعملت نسخة جديدة');
+    const r: any = await act('dup', () => api(`/invoices/${inv.id}/duplicate`, { method: 'POST' }), tr('انعملت نسخة جديدة'));
     if (r?.id) nav(`/invoices/${r.id}/edit`);
   };
   const convert = async () => {
-    const r: any = await act('convert', () => api(`/invoices/${inv.id}/convert`, { method: 'POST' }), 'تحوّل لفاتورة (مسودة)');
+    const r: any = await act('convert', () => api(`/invoices/${inv.id}/convert`, { method: 'POST' }), tr('تحوّل لفاتورة (مسودة)'));
     if (r?.id) nav(`/invoices/${r.id}/edit`);
   };
-  const quoteStatus = (status: string) => act('qs', () => api(`/invoices/${inv.id}/quote-status`, { body: { status } }), 'انحفظت الحالة');
+  const quoteStatus = (status: string) => act('qs', () => api(`/invoices/${inv.id}/quote-status`, { body: { status } }), tr('انحفظت الحالة'));
 
   return (
     <div className="animate-fade-up">
@@ -122,48 +123,48 @@ export default function InvoiceView() {
               <Money cents={inv.total_cents} className="text-2xl font-bold" />
             </div>
             <dl className="mt-3 space-y-1.5 text-sm">
-              <div className="flex justify-between"><dt className="text-gray-500">التاريخ</dt><dd className="num">{fmtDate(inv.issue_date)}</dd></div>
-              {inv.due_date && inv.kind !== 'storno' && <div className="flex justify-between"><dt className="text-gray-500">{inv.kind === 'quote' ? 'صالح لغاية' : 'الاستحقاق'}</dt><dd className={overdue ? 'num font-semibold text-amber-700' : 'num'}>{fmtDate(inv.due_date)}</dd></div>}
-              {inv.paid_date && <div className="flex justify-between"><dt className="text-gray-500">تاريخ الدفع</dt><dd className="num text-emerald-700">{fmtDate(inv.paid_date)}</dd></div>}
-              {inv.cancel_reason && <div className="flex justify-between gap-3"><dt className="shrink-0 text-gray-500">سبب الإلغاء</dt><dd className="text-end">{inv.cancel_reason}</dd></div>}
+              <div className="flex justify-between"><dt className="text-gray-500">{tr('التاريخ')}</dt><dd className="num">{fmtDate(inv.issue_date)}</dd></div>
+              {inv.due_date && inv.kind !== 'storno' && <div className="flex justify-between"><dt className="text-gray-500">{inv.kind === 'quote' ? tr('صالح لغاية') : tr('الاستحقاق')}</dt><dd className={overdue ? 'num font-semibold text-amber-700' : 'num'}>{fmtDate(inv.due_date)}</dd></div>}
+              {inv.paid_date && <div className="flex justify-between"><dt className="text-gray-500">{tr('تاريخ الدفع')}</dt><dd className="num text-emerald-700">{fmtDate(inv.paid_date)}</dd></div>}
+              {inv.cancel_reason && <div className="flex justify-between gap-3"><dt className="shrink-0 text-gray-500">{tr('سبب الإلغاء')}</dt><dd className="text-end">{inv.cancel_reason}</dd></div>}
             </dl>
             {(inv.related || inv.cancelledBy || inv.convertedTo) && (
               <div className="mt-3 space-y-1.5 border-t border-gray-100 pt-3 text-sm">
-                {inv.related && <Link className="flex items-center gap-1.5 font-semibold text-brand-600" to={`/invoices/${inv.related.id}`}><ArrowLeftRight className="size-4" />{inv.kind === 'storno' ? 'بتلغي الفاتورة' : inv.related.kind === 'quote' ? 'من عرض السعر' : 'تصحيح لـ'} <span className="num">{inv.related.number}</span></Link>}
-                {inv.cancelledBy && <Link className="flex items-center gap-1.5 font-semibold text-rose-600" to={`/invoices/${inv.cancelledBy.id}`}><Ban className="size-4" />انلغت بـ <span className="num">{inv.cancelledBy.number}</span></Link>}
-                {inv.convertedTo && <Link className="flex items-center gap-1.5 font-semibold text-emerald-700" to={inv.convertedTo.number ? `/invoices/${inv.convertedTo.id}` : `/invoices/${inv.convertedTo.id}/edit`}><FileCheck2 className="size-4" />الفاتورة: {inv.convertedTo.number ? <span className="num">{inv.convertedTo.number}</span> : 'مسودة'}</Link>}
+                {inv.related && <Link className="flex items-center gap-1.5 font-semibold text-brand-600" to={`/invoices/${inv.related.id}`}><ArrowLeftRight className="size-4" />{inv.kind === 'storno' ? tr('بتلغي الفاتورة') : inv.related.kind === 'quote' ? tr('من عرض السعر') : tr('تصحيح لـ')} <span className="num">{inv.related.number}</span></Link>}
+                {inv.cancelledBy && <Link className="flex items-center gap-1.5 font-semibold text-rose-600" to={`/invoices/${inv.cancelledBy.id}`}><Ban className="size-4" />{tr('انلغت بـ')} <span className="num">{inv.cancelledBy.number}</span></Link>}
+                {inv.convertedTo && <Link className="flex items-center gap-1.5 font-semibold text-emerald-700" to={inv.convertedTo.number ? `/invoices/${inv.convertedTo.id}` : `/invoices/${inv.convertedTo.id}/edit`}><FileCheck2 className="size-4" />{tr('الفاتورة:')} {inv.convertedTo.number ? <span className="num">{inv.convertedTo.number}</span> : tr('مسودة')}</Link>}
               </div>
             )}
           </Card>
 
           {/* Primary actions */}
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="secondary" icon={<Download className="size-5" />} loading={busy === 'dl'} onClick={download}>تحميل PDF</Button>
-            <Button variant="secondary" icon={<Share2 className="size-5" />} loading={busy === 'share'} onClick={share}>مشاركة</Button>
-            {inv.kind !== 'storno' && <Button variant="secondary" className="col-span-2" icon={<Mail className="size-5" />} onClick={mail}>إيميل للعميل</Button>}
+            <Button variant="secondary" icon={<Download className="size-5" />} loading={busy === 'dl'} onClick={download}>{tr('تحميل PDF')}</Button>
+            <Button variant="secondary" icon={<Share2 className="size-5" />} loading={busy === 'share'} onClick={share}>{tr('مشاركة')}</Button>
+            {inv.kind !== 'storno' && <Button variant="secondary" className="col-span-2" icon={<Mail className="size-5" />} onClick={mail}>{tr('إيميل للعميل')}</Button>}
           </div>
 
           {inv.kind === 'invoice' && inv.status === 'issued' && (
-            <Button variant="success" block size="lg" icon={<CheckCircle2 className="size-5" />} onClick={() => { setPaidDate(todayIso()); setPaidOpen(true); }}>تم الدفع</Button>
+            <Button variant="success" block size="lg" icon={<CheckCircle2 className="size-5" />} onClick={() => { setPaidDate(todayIso()); setPaidOpen(true); }}>{tr('تم الدفع')}</Button>
           )}
           {inv.kind === 'quote' && !inv.convertedTo && inv.status !== 'declined' && (
-            <Button variant="success" block size="lg" icon={<FileCheck2 className="size-5" />} loading={busy === 'convert'} onClick={convert}>حوّل لفاتورة</Button>
+            <Button variant="success" block size="lg" icon={<FileCheck2 className="size-5" />} loading={busy === 'convert'} onClick={convert}>{tr('حوّل لفاتورة')}</Button>
           )}
 
           <Card className="divide-y divide-gray-100">
-            {inv.kind === 'invoice' && inv.status === 'paid' && <ActionRow icon={<Undo2 className="size-5" />} label="رجّعها غير مدفوعة" onClick={markUnpaid} />}
-            {inv.kind === 'invoice' && ['issued', 'paid'].includes(inv.status) && <ActionRow icon={<PencilLine className="size-5" />} label="تصحيح الفاتورة" sub="إلغاء + نسخة جديدة للتعديل" onClick={correct} />}
-            {inv.kind === 'invoice' && ['issued', 'paid'].includes(inv.status) && <ActionRow icon={<Ban className="size-5" />} label="إلغاء الفاتورة" sub="بفاتورة إلغاء رسمية" danger onClick={cancel} />}
-            {inv.kind === 'quote' && inv.status !== 'accepted' && <ActionRow icon={<ThumbsUp className="size-5" />} label="العميل وافق" onClick={() => quoteStatus('accepted')} />}
-            {inv.kind === 'quote' && inv.status !== 'declined' && !inv.convertedTo && <ActionRow icon={<ThumbsDown className="size-5" />} label="العميل رفض" onClick={() => quoteStatus('declined')} />}
-            {inv.kind !== 'storno' && <ActionRow icon={<Copy className="size-5" />} label="نسخة جديدة" sub="نفس البنود لعميل أو شهر تاني" onClick={duplicate} />}
+            {inv.kind === 'invoice' && inv.status === 'paid' && <ActionRow icon={<Undo2 className="size-5" />} label={tr('رجّعها غير مدفوعة')} onClick={markUnpaid} />}
+            {inv.kind === 'invoice' && ['issued', 'paid'].includes(inv.status) && <ActionRow icon={<PencilLine className="size-5" />} label={tr('تصحيح الفاتورة')} sub={tr('إلغاء + نسخة جديدة للتعديل')} onClick={correct} />}
+            {inv.kind === 'invoice' && ['issued', 'paid'].includes(inv.status) && <ActionRow icon={<Ban className="size-5" />} label={tr('إلغاء الفاتورة')} sub={tr('بفاتورة إلغاء رسمية')} danger onClick={cancel} />}
+            {inv.kind === 'quote' && inv.status !== 'accepted' && <ActionRow icon={<ThumbsUp className="size-5" />} label={tr('العميل وافق')} onClick={() => quoteStatus('accepted')} />}
+            {inv.kind === 'quote' && inv.status !== 'declined' && !inv.convertedTo && <ActionRow icon={<ThumbsDown className="size-5" />} label={tr('العميل رفض')} onClick={() => quoteStatus('declined')} />}
+            {inv.kind !== 'storno' && <ActionRow icon={<Copy className="size-5" />} label={tr('نسخة جديدة')} sub={tr('نفس البنود لعميل أو شهر تاني')} onClick={duplicate} />}
           </Card>
         </div>
       </div>
 
-      <Sheet open={paidOpen} onClose={() => setPaidOpen(false)} title="تم الدفع"
-        footer={<Button variant="success" block size="lg" loading={busy === 'paid'} onClick={markPaid}>تأكيد</Button>}>
-        <Field label="تاريخ وصول المبلغ"><input type="date" className="field" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} /></Field>
+      <Sheet open={paidOpen} onClose={() => setPaidOpen(false)} title={tr('تم الدفع')}
+        footer={<Button variant="success" block size="lg" loading={busy === 'paid'} onClick={markPaid}>{tr('تأكيد')}</Button>}>
+        <Field label={tr('تاريخ وصول المبلغ')}><input type="date" className="field" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} /></Field>
       </Sheet>
     </div>
   );

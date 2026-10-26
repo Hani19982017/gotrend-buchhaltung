@@ -81,6 +81,12 @@ textarea.field { resize: vertical; min-height: 5rem; line-height: 1.6; }
 select.field { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236b7280' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 0.8rem center; padding-left: 2.2rem; }
 input[type='date'].field { direction: ltr; text-align: right; min-height: 2.9rem; }
 
+/* ── Left-to-right (German) layout ── */
+[dir='ltr'] select.field { background-position: right 0.8rem center; padding-left: 0.9rem; padding-right: 2.2rem; }
+[dir='ltr'] input[type='date'].field { text-align: left; }
+/* Arrows/chevrons drawn for RTL point the other way in LTR. `scale` composes with the hover `transform`. */
+[dir='ltr'] .flip-ltr { scale: -1 1; }
+
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { scrollbar-width: none; }
 

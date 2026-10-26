@@ -6,6 +6,7 @@ import { api } from '../lib/api';
 import type { InvoiceListItem } from '../lib/types';
 import { clientName, fmtDate, statusInfo, todayIso, KIND_LABEL } from '../lib/format';
 import { Button, Card, Loading, ErrorBox, PageHeader, Segmented, Money, Badge, Empty, cx } from '../components/ui';
+import { tr } from '../lib/i18n';
 
 type Tab = 'all' | 'invoice' | 'quote' | 'draft' | 'open';
 
@@ -38,30 +39,30 @@ export default function InvoicesPage() {
 
   return (
     <div className="animate-fade-up">
-      <PageHeader title="الفواتير وعروض الأسعار" subtitle={openSum > 0 ? <>بانتظار الدفع: <Money cents={openSum} className="font-semibold text-gray-700" /></> : undefined}
-        actions={<Button size="sm" icon={<Plus className="size-4.5" />} onClick={() => nav('/invoices/new')} className="hidden sm:inline-flex">فاتورة جديدة</Button>} />
+      <PageHeader title={tr('الفواتير وعروض الأسعار')} subtitle={openSum > 0 ? <>{tr('بانتظار الدفع:')} <Money cents={openSum} className="font-semibold text-gray-700" /></> : undefined}
+        actions={<Button size="sm" icon={<Plus className="size-4.5" />} onClick={() => nav('/invoices/new')} className="hidden sm:inline-flex">{tr('فاتورة جديدة')}</Button>} />
 
       <div className="mb-3 grid grid-cols-2 gap-2 sm:hidden">
-        <Button icon={<FileText className="size-4.5" />} onClick={() => nav('/invoices/new')}>فاتورة</Button>
-        <Button variant="secondary" icon={<FileSignature className="size-4.5" />} onClick={() => nav('/invoices/new?kind=quote')}>عرض سعر</Button>
+        <Button icon={<FileText className="size-4.5" />} onClick={() => nav('/invoices/new')}>{tr('فاتورة')}</Button>
+        <Button variant="secondary" icon={<FileSignature className="size-4.5" />} onClick={() => nav('/invoices/new?kind=quote')}>{tr('عرض سعر')}</Button>
       </div>
 
       <Segmented<Tab> className="mb-3" size="sm" value={tab} onChange={(v) => setSp(v === 'all' ? {} : { tab: v }, { replace: true })}
         options={[
-          { value: 'all', label: 'الكل' },
-          { value: 'invoice', label: 'فواتير' },
-          { value: 'quote', label: 'عروض' },
-          { value: 'open', label: <>غير مدفوعة{counts.open ? <span className="num ms-1 text-xs text-gray-400">{counts.open}</span> : null}</> },
-          { value: 'draft', label: <>مسودات{counts.draft ? <span className="num ms-1 text-xs text-gray-400">{counts.draft}</span> : null}</> },
+          { value: 'all', label: tr('الكل') },
+          { value: 'invoice', label: tr('فواتير') },
+          { value: 'quote', label: tr('عروض') },
+          { value: 'open', label: <>{tr('غير مدفوعة')}{counts.open ? <span className="num ms-1 text-xs text-gray-400">{counts.open}</span> : null}</> },
+          { value: 'draft', label: <>{tr('مسودات')}{counts.draft ? <span className="num ms-1 text-xs text-gray-400">{counts.draft}</span> : null}</> },
         ]} />
 
       <div className="relative mb-4">
         <Search className="pointer-events-none absolute inset-y-0 start-3.5 my-auto size-4.5 text-gray-400" />
-        <input className="field !ps-10" placeholder="بحث بالرقم أو العميل…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="field !ps-10" placeholder={tr('بحث بالرقم أو العميل…')} value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
       {isLoading ? <Loading /> : error ? <ErrorBox error={error} /> : list.length === 0 ? (
-        <Card><Empty icon={<FileText className="size-6" />} title="ما في شي هون" text="اعمل أول فاتورة بكبسة على الزر." action={<Button onClick={() => nav('/invoices/new')} icon={<Plus className="size-4.5" />}>فاتورة جديدة</Button>} /></Card>
+        <Card><Empty icon={<FileText className="size-6" />} title={tr('ما في شي هون')} text={tr('اعمل أول فاتورة بكبسة على الزر.')} action={<Button onClick={() => nav('/invoices/new')} icon={<Plus className="size-4.5" />}>{tr('فاتورة جديدة')}</Button>} /></Card>
       ) : (
         <Card className="divide-y divide-gray-100">
           {list.map((i) => <InvoiceRow key={i.id} inv={i} today={today} />)}
@@ -84,7 +85,7 @@ export function InvoiceRow({ inv: i, today }: { inv: InvoiceListItem; today: str
       <div className="min-w-0 flex-1">
         <div className="truncate font-semibold text-gray-900">{clientName(i.client)}</div>
         <div className="truncate text-xs text-gray-500">
-          {i.number ? <span className="num">{i.number}</span> : <span>{KIND_LABEL[i.kind]} (مسودة)</span>} · {fmtDate(i.issue_date)}{i.title ? ` · ${i.title}` : ''}
+          {i.number ? <span className="num">{i.number}</span> : <span>{KIND_LABEL[i.kind]} {tr('(مسودة)')}</span>} · {fmtDate(i.issue_date)}{i.title ? ` · ${i.title}` : ''}
         </div>
       </div>
       <div className="flex flex-col items-end gap-1">

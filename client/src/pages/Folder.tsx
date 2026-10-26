@@ -8,6 +8,7 @@ import { ymLabel, folderLabel, clientName, fmtDayMonth, statusInfo, defaultDateF
 import { Button, Card, Loading, ErrorBox, PageHeader, Empty, Money, Badge, Section } from '../components/ui';
 import EntryRow from '../components/EntryRow';
 import { useCapture } from '../components/Layout';
+import { tr } from '../lib/i18n';
 
 export default function FolderPage() {
   const { ym = '', folder = 'purchase' } = useParams();
@@ -16,7 +17,7 @@ export default function FolderPage() {
   const { data, isLoading, error } = useQuery<MonthData>({ queryKey: ['month', ym], queryFn: () => api(`/months/${ym}`) });
 
   const isInvoices = folder === 'invoices';
-  const title = isInvoices ? 'فواتير العملاء' : folderLabel(folder as Folder);
+  const title = isInvoices ? tr('فواتير العملاء') : folderLabel(folder as Folder);
   const header = <PageHeader back={`/month/${ym}`} title={title} subtitle={ymLabel(ym)} />;
   if (isLoading) return <>{header}<Loading /></>;
   if (error || !data) return <>{header}<ErrorBox error={error} /></>;
@@ -39,15 +40,15 @@ export default function FolderPage() {
       <div className="animate-fade-up">
         {header}
         <div className="mb-4 flex gap-2">
-          <Button icon={<Plus className="size-5" />} onClick={() => nav('/invoices/new')}>فاتورة جديدة</Button>
-          <Button variant="secondary" onClick={() => pickFiles('income')}>ارفع فاتورة خارجية</Button>
+          <Button icon={<Plus className="size-5" />} onClick={() => nav('/invoices/new')}>{tr('فاتورة جديدة')}</Button>
+          <Button variant="secondary" onClick={() => pickFiles('income')}>{tr('ارفع فاتورة خارجية')}</Button>
         </div>
         {data.invoices.length === 0 && manual.length === 0 ? (
-          <Card><Empty icon={<Receipt className="size-6" />} title="ما في فواتير بهالشهر" text="الفواتير اللي بتصدرها من البرنامج بتنحط هون تلقائياً حسب تاريخها." /></Card>
+          <Card><Empty icon={<Receipt className="size-6" />} title={tr('ما في فواتير بهالشهر')} text={tr('الفواتير اللي بتصدرها من البرنامج بتنحط هون تلقائياً حسب تاريخها.')} /></Card>
         ) : (
           <>
             {data.invoices.length > 0 && (
-              <Section title="صادرة من البرنامج">
+              <Section title={tr('صادرة من البرنامج')}>
                 <Card className="divide-y divide-gray-100">
                   {data.invoices.map((i) => {
                     const s = statusInfo(i.kind, i.status);
@@ -68,7 +69,7 @@ export default function FolderPage() {
               </Section>
             )}
             {manual.length > 0 && (
-              <Section title="فواتير خارجية (إدخال يدوي)">
+              <Section title={tr('فواتير خارجية (إدخال يدوي)')}>
                 <Card className="divide-y divide-gray-100">{manual.map((e) => <EntryRow key={e.id} entry={e} income />)}</Card>
               </Section>
             )}
@@ -83,14 +84,14 @@ export default function FolderPage() {
     <div className="animate-fade-up">
       {header}
       <div className="mb-4 flex flex-wrap gap-2">
-        <Button icon={<Camera className="size-5" />} onClick={() => document.getElementById('gt-cam-folder')?.click()}>صوّر</Button>
-        <Button variant="secondary" onClick={() => pickFiles(folder as Folder)}>ارفع ملف</Button>
-        <Button variant="ghost" onClick={() => nav(`/entry/new?folder=${folder}&date=${defaultDateFor(ym)}`)}>بدون ملف</Button>
+        <Button icon={<Camera className="size-5" />} onClick={() => document.getElementById('gt-cam-folder')?.click()}>{tr('صوّر')}</Button>
+        <Button variant="secondary" onClick={() => pickFiles(folder as Folder)}>{tr('ارفع ملف')}</Button>
+        <Button variant="ghost" onClick={() => nav(`/entry/new?folder=${folder}&date=${defaultDateFor(ym)}`)}>{tr('بدون ملف')}</Button>
         <input id="gt-cam-folder" type="file" accept="image/*" capture="environment" className="hidden"
           onChange={(e) => { const f = Array.from(e.target.files || []); e.target.value = ''; if (f.length) capture.openWithFiles(f, { folder }); }} />
       </div>
       {list.length === 0 ? (
-        <Card><Empty icon={<FolderOpen className="size-6" />} title="المجلد فاضي" text="ارفع أول إيصال لهالشهر." /></Card>
+        <Card><Empty icon={<FolderOpen className="size-6" />} title={tr('المجلد فاضي')} text={tr('ارفع أول إيصال لهالشهر.')} /></Card>
       ) : (
         <Card className="divide-y divide-gray-100">{list.map((e) => <EntryRow key={e.id} entry={e} />)}</Card>
       )}

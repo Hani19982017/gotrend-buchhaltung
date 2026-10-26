@@ -1,3 +1,4 @@
+import { tr, tServer } from './i18n';
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -21,15 +22,15 @@ export async function api<T = any>(url: string, opts: Opts = {}): Promise<T> {
     res = await fetch(`/api${url}`, { method: opts.method || (body ? 'POST' : 'GET'), headers, body, credentials: 'same-origin', signal: opts.signal });
   } catch (e: any) {
     if (e?.name === 'AbortError') throw e;
-    throw new ApiError(0, 'ما في اتصال بالإنترنت أو الخادم مو شغال');
+    throw new ApiError(0, tr('ما في اتصال بالإنترنت أو الخادم مو شغال'));
   }
   if (res.status === 401 && !url.startsWith('/auth')) {
     window.dispatchEvent(new Event('gt:unauthorized'));
   }
   const ct = res.headers.get('content-type') || '';
   if (!res.ok) {
-    const msg = ct.includes('json') ? (await res.json()).error : `خطأ ${res.status}`;
-    throw new ApiError(res.status, msg || `خطأ ${res.status}`);
+    const msg = ct.includes('json') ? tServer((await res.json()).error) : tr('خطأ {0}', [res.status]);
+    throw new ApiError(res.status, msg || tr('خطأ {0}', [res.status]));
   }
   if (ct.includes('json')) return res.json();
   return (await res.blob()) as unknown as T;
@@ -45,7 +46,7 @@ export async function apiBlob(url: string, opts: Opts = {}): Promise<Blob> {
   const res = await fetch(`/api${url}`, { method: opts.method || (body ? 'POST' : 'GET'), headers, body, credentials: 'same-origin', signal: opts.signal });
   if (!res.ok) {
     const ct = res.headers.get('content-type') || '';
-    const msg = ct.includes('json') ? (await res.json()).error : `خطأ ${res.status}`;
+    const msg = ct.includes('json') ? tServer((await res.json()).error) : tr('خطأ {0}', [res.status]);
     throw new ApiError(res.status, msg);
   }
   return res.blob();
@@ -56,7 +57,7 @@ export async function downloadFrom(url: string, fallbackName: string) {
   const res = await fetch(`/api${url}`, { credentials: 'same-origin', headers: { 'x-gt': '1' } });
   if (!res.ok) {
     const ct = res.headers.get('content-type') || '';
-    throw new ApiError(res.status, ct.includes('json') ? (await res.json()).error : `خطأ ${res.status}`);
+    throw new ApiError(res.status, ct.includes('json') ? tServer((await res.json()).error) : tr('خطأ {0}', [res.status]));
   }
   const blob = await res.blob();
   const cd = res.headers.get('content-disposition') || '';

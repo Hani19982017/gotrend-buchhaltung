@@ -5,9 +5,10 @@ import { Plus, Trash2, ChevronUp, ChevronDown, Eye, Save, Send, UserPlus, Search
 import { api, apiBlob } from '../lib/api';
 import type { Client, Invoice, InvoiceKind, Settings } from '../lib/types';
 import { parseAmount, todayIso, fmtEur, clientName, ymRange, shiftYm, KIND_LABEL } from '../lib/format';
-import { Button, Card, Field, Loading, ErrorBox, PageHeader, Segmented, Sheet, useUi, IconButton, cx, Money } from '../components/ui';
+import { Rich, Button, Card, Field, Loading, ErrorBox, PageHeader, Segmented, Sheet, useUi, IconButton, cx, Money } from '../components/ui';
 import PdfPreview from '../components/PdfPreview';
 import ClientForm from '../components/ClientForm';
+import { tr } from '../lib/i18n';
 
 type Item = { id: string; description: string; qty: string; unit: string; price: string; tax_rate: number };
 type Form = {
@@ -170,7 +171,7 @@ export default function InvoiceEditor() {
     return () => clearTimeout(t);
   }, [body, wantPreview]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (settingsQ.error || clientsQ.error || invQ.error) return <><PageHeader back title="فاتورة" /><ErrorBox error={settingsQ.error || clientsQ.error || invQ.error} /></>;
+  if (settingsQ.error || clientsQ.error || invQ.error) return <><PageHeader back title={tr('فاتورة')} /><ErrorBox error={settingsQ.error || clientsQ.error || invQ.error} /></>;
   if (!f || !s) return <Loading />;
 
   const setItem = (idx: number, patch: Partial<Item>) => update({ items: f.items.map((it, i) => (i === idx ? { ...it, ...patch } : it)) });
@@ -234,7 +235,7 @@ export default function InvoiceEditor() {
     setSaving('save');
     try {
       const newId = await persist();
-      toast('انحفظت المسودة');
+      toast(tr('انحفظت المسودة'));
       if (isNew && newId) nav(`/invoices/${newId}/edit`, { replace: true });
     } catch (e: any) {
       toast(e.message, 'error');
@@ -244,13 +245,13 @@ export default function InvoiceEditor() {
   };
 
   const issue = async () => {
-    if (!f.client_id) return toast('اختار العميل أول', 'error');
-    if (!f.items.some((it) => it.description.trim())) return toast('اكتب وصف لبند واحد على الأقل', 'error');
-    if (f.kind === 'invoice' && totals.total <= 0) return toast('مبلغ الفاتورة لازم يكون أكبر من صفر', 'error');
+    if (!f.client_id) return toast(tr('اختار العميل أول'), 'error');
+    if (!f.items.some((it) => it.description.trim())) return toast(tr('اكتب وصف لبند واحد على الأقل'), 'error');
+    if (f.kind === 'invoice' && totals.total <= 0) return toast(tr('مبلغ الفاتورة لازم يكون أكبر من صفر'), 'error');
     const ok = await confirm({
-      title: f.kind === 'quote' ? 'إصدار عرض السعر؟' : 'إصدار الفاتورة؟',
-      text: <>رح ياخد رقم رسمي متسلسل وبينقفل. {f.kind === 'invoice' && <>بعد الإصدار التعديل بيصير عن طريق <b>تصحيح</b> (فاتورة إلغاء + نسخة جديدة) حسب القانون الألماني.</>}<div className="mt-3 rounded-2xl bg-gray-50 p-3 text-gray-800"><b>{clientName(client)}</b> · <Money cents={totals.total} className="font-bold" /></div></>,
-      confirm: 'إصدار',
+      title: f.kind === 'quote' ? tr('إصدار عرض السعر؟') : tr('إصدار الفاتورة؟'),
+      text: <>{tr('رح ياخد رقم رسمي متسلسل وبينقفل.')} {f.kind === 'invoice' && <Rich text={tr('بعد الإصدار التعديل بيصير عن طريق **تصحيح** (فاتورة إلغاء + نسخة جديدة) حسب القانون الألماني.')} />}<div className="mt-3 rounded-2xl bg-gray-50 p-3 text-gray-800"><b>{clientName(client)}</b> · <Money cents={totals.total} className="font-bold" /></div></>,
+      confirm: tr('إصدار'),
     });
     if (!ok) return;
     setSaving('issue');
@@ -262,7 +263,7 @@ export default function InvoiceEditor() {
       qc.invalidateQueries({ queryKey: ['invoices'] });
       qc.invalidateQueries({ queryKey: ['month'] });
       qc.invalidateQueries({ queryKey: ['clients'] });
-      toast(f.kind === 'quote' ? 'صدر عرض السعر' : 'صدرت الفاتورة');
+      toast(f.kind === 'quote' ? tr('صدر عرض السعر') : tr('صدرت الفاتورة'));
       nav(`/invoices/${newId}`, { replace: true });
     } catch (e: any) {
       toast(e.message, 'error');
@@ -274,10 +275,10 @@ export default function InvoiceEditor() {
   const removeDraft = async () => {
     const existingId = id ? Number(id) : createdId.current;
     if (!existingId) return nav(-1);
-    if (!(await confirm({ title: 'حذف المسودة؟', confirm: 'حذف', danger: true }))) return;
+    if (!(await confirm({ title: tr('حذف المسودة؟'), confirm: tr('حذف'), danger: true }))) return;
     await api(`/invoices/${existingId}`, { method: 'DELETE' }).catch((e) => toast(e.message, 'error'));
     qc.invalidateQueries({ queryKey: ['invoices'] });
-    toast('انحذفت المسودة');
+    toast(tr('انحذفت المسودة'));
     nav('/invoices', { replace: true });
   };
 
@@ -286,13 +287,13 @@ export default function InvoiceEditor() {
 
   const formCol = (
     <div className="space-y-4">
-      {related && <div className="rounded-2xl bg-violet-50 p-3 text-sm text-violet-800">{related.kind === 'quote' ? 'من عرض السعر' : 'تصحيح للفاتورة'} <b className="num">{related.number}</b></div>}
+      {related && <div className="rounded-2xl bg-violet-50 p-3 text-sm text-violet-800">{related.kind === 'quote' ? tr('من عرض السعر') : tr('تصحيح للفاتورة')} <b className="num">{related.number}</b></div>}
 
-      <Segmented value={f.kind} onChange={(v) => changeLangOrKind({ kind: v })} options={[{ value: 'invoice', label: 'فاتورة' }, { value: 'quote', label: 'عرض سعر' }]} />
+      <Segmented value={f.kind} onChange={(v) => changeLangOrKind({ kind: v })} options={[{ value: 'invoice', label: tr('فاتورة') }, { value: 'quote', label: tr('عرض سعر') }]} />
 
       {/* Client */}
       <Card className="p-4">
-        <div className="mb-2 text-[13px] font-semibold text-gray-700">العميل</div>
+        <div className="mb-2 text-[13px] font-semibold text-gray-700">{tr('العميل')}</div>
         {client ? (
           <button type="button" onClick={() => setClientPicker(true)} className="group flex w-full items-center gap-3 rounded-2xl bg-gray-50 p-3 text-start transition hover:bg-gray-100">
             <div className="icon-pop flex size-11 items-center justify-center rounded-xl bg-white text-brand-600 shadow-sm"><Building2 className="size-5" /></div>
@@ -300,12 +301,12 @@ export default function InvoiceEditor() {
               <div className="truncate font-bold text-gray-900">{clientName(client)}</div>
               <div className="truncate text-xs text-gray-500">{[client.contact !== client.company && client.contact, client.street, `${client.zip} ${client.city}`.trim()].filter(Boolean).join(' · ')}</div>
             </div>
-            <span className="text-sm font-semibold text-brand-600">تغيير</span>
+            <span className="text-sm font-semibold text-brand-600">{tr('تغيير')}</span>
           </button>
         ) : (
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="soft" icon={<Search className="size-4.5" />} onClick={() => setClientPicker(true)}>اختار عميل</Button>
-            <Button variant="secondary" icon={<UserPlus className="size-4.5" />} onClick={() => setNewClient(true)}>عميل جديد</Button>
+            <Button variant="soft" icon={<Search className="size-4.5" />} onClick={() => setClientPicker(true)}>{tr('اختار عميل')}</Button>
+            <Button variant="secondary" icon={<UserPlus className="size-4.5" />} onClick={() => setNewClient(true)}>{tr('عميل جديد')}</Button>
           </div>
         )}
       </Card>
@@ -313,52 +314,52 @@ export default function InvoiceEditor() {
       {/* Details */}
       <Card className="space-y-4 p-4">
         <div className="grid grid-cols-2 gap-3">
-          <Field label={f.kind === 'quote' ? 'تاريخ العرض' : 'تاريخ الفاتورة'}>
+          <Field label={f.kind === 'quote' ? tr('تاريخ العرض') : tr('تاريخ الفاتورة')}>
             <input type="date" className="field" value={f.issue_date} onChange={(e) => update({ issue_date: e.target.value })} />
           </Field>
-          <Field label={f.kind === 'quote' ? 'صالح لغاية' : 'تاريخ الاستحقاق'}>
+          <Field label={f.kind === 'quote' ? tr('صالح لغاية') : tr('تاريخ الاستحقاق')}>
             <input type="date" className="field" value={f.due_date} onChange={(e) => { setDueTouched(true); update({ due_date: e.target.value }); }} />
           </Field>
         </div>
         <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-[13px] font-semibold text-gray-700">فترة الخدمة</span>
+          <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-2">
+            <span className="text-[13px] font-semibold text-gray-700">{tr('فترة الخدمة')}</span>
             <div className="flex gap-1">
               {(['this', 'last', 'none'] as const).map((w) => (
-                <button key={w} type="button" onClick={() => setPeriod(w)} className="rounded-lg px-2 py-1 text-xs font-semibold text-brand-600 hover:bg-brand-50">
-                  {w === 'this' ? 'هالشهر' : w === 'last' ? 'الشهر الماضي' : 'مسح'}
+                <button key={w} type="button" onClick={() => setPeriod(w)} className="whitespace-nowrap rounded-lg px-2 py-1 text-xs font-semibold text-brand-600 hover:bg-brand-50">
+                  {w === 'this' ? tr('هالشهر') : w === 'last' ? tr('الشهر الماضي') : tr('مسح')}
                 </button>
               ))}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <input type="date" className="field" aria-label="من" value={f.service_from} onChange={(e) => update({ service_from: e.target.value })} />
-            <input type="date" className="field" aria-label="إلى" value={f.service_to} onChange={(e) => update({ service_to: e.target.value })} />
+            <input type="date" className="field" aria-label={tr('من')} value={f.service_from} onChange={(e) => update({ service_from: e.target.value })} />
+            <input type="date" className="field" aria-label={tr('إلى')} value={f.service_to} onChange={(e) => update({ service_to: e.target.value })} />
           </div>
-          <p className="mt-1 flex items-center gap-1 text-xs text-gray-500"><CalendarRange className="size-3.5" /> إذا فاضية، تاريخ الفاتورة بيعتبر تاريخ الخدمة</p>
+          <p className="mt-1 flex items-center gap-1 text-xs text-gray-500"><CalendarRange className="size-3.5" /> {tr('إذا فاضية، تاريخ الفاتورة بيعتبر تاريخ الخدمة')}</p>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="لغة الفاتورة" group>
-            <Segmented size="sm" value={f.language} onChange={(v) => changeLangOrKind({ language: v })} options={[{ value: 'de', label: 'ألماني' }, { value: 'en', label: 'إنكليزي' }]} />
+          <Field label={tr('لغة الفاتورة')} group>
+            <Segmented size="sm" value={f.language} onChange={(v) => changeLangOrKind({ language: v })} options={[{ value: 'de', label: tr('ألماني') }, { value: 'en', label: tr('إنكليزي') }]} />
           </Field>
           {standard && (
-            <Field label="الضريبة">
+            <Field label={tr('الضريبة')}>
               <select className="field" value={f.tax_treatment} onChange={(e) => update({ tax_treatment: e.target.value as Form['tax_treatment'] })}>
-                <option value="auto">عادية (ضريبة مبيعات ألمانية)</option>
-                <option value="reverse_charge">عميل بالاتحاد الأوروبي — Reverse Charge</option>
-                <option value="export">عميل برا الاتحاد الأوروبي</option>
+                <option value="auto">{tr('عادية (ضريبة مبيعات ألمانية)')}</option>
+                <option value="reverse_charge">{tr('عميل بالاتحاد الأوروبي — Reverse Charge')}</option>
+                <option value="export">{tr('عميل برا الاتحاد الأوروبي')}</option>
               </select>
             </Field>
           )}
         </div>
-        <Field label="العنوان (اختياري)" hint="بيظهر تحت رقم الفاتورة، مثلاً: Marketing-Leistungen Oktober 2026">
+        <Field label={tr('العنوان (اختياري)')} hint={tr('بيظهر تحت رقم الفاتورة، مثلاً: Marketing-Leistungen Oktober 2026')}>
           <input className="field" dir="auto" value={f.title} onChange={(e) => update({ title: e.target.value })} />
         </Field>
       </Card>
 
       {/* Items */}
       <div>
-        <div className="mb-2 px-1 text-[15px] font-bold text-gray-800">البنود</div>
+        <div className="mb-2 px-1 text-[15px] font-bold text-gray-800">{tr('البنود')}</div>
         <div className="space-y-3">
           {f.items.map((it, idx) => {
             const lineTotal = Math.round((parseAmount(it.qty) ?? 0) * Math.round((parseAmount(it.price) ?? 0) * 100));
@@ -367,61 +368,61 @@ export default function InvoiceEditor() {
                 <div className="mb-2 flex items-center justify-between">
                   <span className="flex size-7 items-center justify-center rounded-lg bg-brand-50 text-xs font-bold text-brand-700 num">{idx + 1}</span>
                   <div className="flex items-center">
-                    <IconButton label="لفوق" className="size-8" onClick={() => moveItem(idx, -1)} disabled={idx === 0}><ChevronUp className="size-4.5" /></IconButton>
-                    <IconButton label="لتحت" className="size-8" onClick={() => moveItem(idx, 1)} disabled={idx === f.items.length - 1}><ChevronDown className="size-4.5" /></IconButton>
-                    <IconButton label="حذف البند" className="size-8 text-red-500 hover:bg-red-50" onClick={() => removeItem(idx)} disabled={f.items.length === 1}><Trash2 className="size-4.5" /></IconButton>
+                    <IconButton label={tr('لفوق')} className="size-8" onClick={() => moveItem(idx, -1)} disabled={idx === 0}><ChevronUp className="size-4.5" /></IconButton>
+                    <IconButton label={tr('لتحت')} className="size-8" onClick={() => moveItem(idx, 1)} disabled={idx === f.items.length - 1}><ChevronDown className="size-4.5" /></IconButton>
+                    <IconButton label={tr('حذف البند')} className="size-8 text-red-500 hover:bg-red-50" onClick={() => removeItem(idx)} disabled={f.items.length === 1}><Trash2 className="size-4.5" /></IconButton>
                   </div>
                 </div>
-                <textarea className="field !min-h-[4.5rem]" dir="auto" rows={2} placeholder={'الوصف — أول سطر عريض\nوالسطور التانية تفاصيل'} value={it.description} onChange={(e) => setItem(idx, { description: e.target.value })} />
+                <textarea className="field !min-h-[4.5rem]" dir="auto" rows={2} placeholder={tr('الوصف — أول سطر عريض\nوالسطور التانية تفاصيل')} value={it.description} onChange={(e) => setItem(idx, { description: e.target.value })} />
                 <div className={cx('mt-3 grid gap-2.5', standard && f.tax_treatment === 'auto' ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3')}>
-                  <Field label="الكمية"><input className="field num text-left" dir="ltr" inputMode="decimal" value={it.qty} onChange={(e) => setItem(idx, { qty: e.target.value })} /></Field>
-                  <Field label="الوحدة">
+                  <Field label={tr('الكمية')}><input className="field num text-left" dir="ltr" inputMode="decimal" value={it.qty} onChange={(e) => setItem(idx, { qty: e.target.value })} /></Field>
+                  <Field label={tr('الوحدة')}>
                     <select className="field" dir="ltr" value={it.unit} onChange={(e) => setItem(idx, { unit: e.target.value })}>
                       {units.map((u) => <option key={u} value={u}>{u}</option>)}
                       <option value="">—</option>
                     </select>
                   </Field>
-                  <Field label="السعر €"><input className="field num text-left" dir="ltr" inputMode="decimal" placeholder="0,00" value={it.price} onChange={(e) => setItem(idx, { price: e.target.value })} /></Field>
+                  <Field label={tr('السعر €')}><input className="field num text-left" dir="ltr" inputMode="decimal" placeholder="0,00" value={it.price} onChange={(e) => setItem(idx, { price: e.target.value })} /></Field>
                   {standard && f.tax_treatment === 'auto' && (
-                    <Field label="الضريبة">
+                    <Field label={tr('الضريبة')}>
                       <select className="field" value={it.tax_rate} onChange={(e) => setItem(idx, { tax_rate: Number(e.target.value) })}>
                         <option value={19}>19%</option><option value={7}>7%</option><option value={0}>0%</option>
                       </select>
                     </Field>
                   )}
                 </div>
-                <div className="mt-2 text-end text-sm text-gray-500">المجموع: <Money cents={lineTotal} className="font-bold text-gray-900" /></div>
+                <div className="mt-2 text-end text-sm text-gray-500">{tr('المجموع:')} <Money cents={lineTotal} className="font-bold text-gray-900" /></div>
               </Card>
             );
           })}
         </div>
-        <Button variant="soft" block className="mt-3" icon={<Plus className="size-5" />} onClick={addItem}>بند جديد</Button>
+        <Button variant="soft" block className="mt-3" icon={<Plus className="size-5" />} onClick={addItem}>{tr('بند جديد')}</Button>
       </div>
 
       {/* Totals */}
       <Card className="p-4">
         {standard && (
           <>
-            <Row label="المجموع الصافي" cents={totals.net} />
-            {totals.lines.map((l) => <Row key={l.rate} label={`ضريبة ${l.rate}%`} cents={l.tax} />)}
+            <Row label={tr('المجموع الصافي')} cents={totals.net} />
+            {totals.lines.map((l) => <Row key={l.rate} label={tr('ضريبة {0}%', [l.rate])} cents={l.tax} />)}
           </>
         )}
         <div className="mt-1 flex items-center justify-between border-t border-gray-100 pt-3">
-          <span className="font-bold">المجموع الكلي</span>
+          <span className="font-bold">{tr('المجموع الكلي')}</span>
           <Money cents={totals.total} className="text-2xl font-bold text-brand-700" />
         </div>
-        {!standard && <p className="mt-1 text-xs text-gray-500">بدون ضريبة مبيعات (المادة ١٩ للمشاريع الصغيرة) — فيك تغيّرها من الإعدادات</p>}
+        {!standard && <p className="mt-1 text-xs text-gray-500">{tr('بدون ضريبة مبيعات (المادة ١٩ للمشاريع الصغيرة) — فيك تغيّرها من الإعدادات')}</p>}
       </Card>
 
       {/* Texts */}
       <Card className="space-y-4 p-4">
-        <Field label="النص قبل البنود" hint="الفاتورة بتطلع بالألماني أو الإنكليزي حسب لغتها">
+        <Field label={tr('النص قبل البنود')} hint={tr('الفاتورة بتطلع بالألماني أو الإنكليزي حسب لغتها')}>
           <textarea className="field" dir="ltr" rows={3} value={f.intro_text} onChange={(e) => { setTextsTouched(true); update({ intro_text: e.target.value }); }} />
         </Field>
-        <Field label="النص بعد البنود" hint="{due} = تاريخ الاستحقاق، {valid} = صالح لغاية">
+        <Field label={tr('النص بعد البنود')} hint={tr('{due} = تاريخ الاستحقاق، {valid} = صالح لغاية')}>
           <textarea className="field" dir="ltr" rows={3} value={f.outro_text} onChange={(e) => { setTextsTouched(true); update({ outro_text: e.target.value }); }} />
         </Field>
-        <Field label="ملاحظة داخلية" hint="ما بتظهر على الفاتورة">
+        <Field label={tr('ملاحظة داخلية')} hint={tr('ما بتظهر على الفاتورة')}>
           <textarea className="field" rows={2} value={f.internal_note} onChange={(e) => update({ internal_note: e.target.value })} />
         </Field>
       </Card>
@@ -430,9 +431,9 @@ export default function InvoiceEditor() {
 
   return (
     <div className="animate-fade-up lg:-me-4">
-      <PageHeader back="/invoices" title={isNew ? `${KIND_LABEL[f.kind]} جديد${f.kind === 'quote' ? '' : 'ة'}` : `تعديل ${KIND_LABEL[f.kind]} (مسودة)`}
-        subtitle={dirty ? 'في تغييرات مو محفوظة' : !isNew ? 'محفوظة كمسودة' : undefined}
-        actions={<IconButton label="حذف المسودة" onClick={removeDraft} className="text-red-600 hover:bg-red-50"><Trash2 className="size-5" /></IconButton>} />
+      <PageHeader back="/invoices" title={isNew ? (f.kind === 'quote' ? tr('عرض سعر جديد') : tr('فاتورة جديدة')) : tr('تعديل {0} (مسودة)', [KIND_LABEL[f.kind]])}
+        subtitle={dirty ? tr('في تغييرات مو محفوظة') : !isNew ? tr('محفوظة كمسودة') : undefined}
+        actions={<IconButton label={tr('حذف المسودة')} onClick={removeDraft} className="text-red-600 hover:bg-red-50"><Trash2 className="size-5" /></IconButton>} />
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,560px)]">
         <div>
@@ -440,17 +441,17 @@ export default function InvoiceEditor() {
       {/* Action bar */}
           <div className="safe-bottom sticky bottom-[calc(4.6rem+env(safe-area-inset-bottom))] z-30 mt-5 lg:bottom-4">
             <div className="flex gap-2 rounded-[1.4rem] bg-white/95 p-2 shadow-[var(--shadow-lift)] ring-1 ring-gray-200 backdrop-blur">
-              {!isDesktop && <Button variant="secondary" className="shrink-0" icon={<Eye className="size-5" />} onClick={() => setPreviewOpen(true)}>معاينة</Button>}
-              <Button variant="secondary" className="flex-1 lg:flex-none" loading={saving === 'save'} icon={<Save className="size-5" />} onClick={saveDraft}>مسودة</Button>
-              <Button variant="success" className="flex-1" loading={saving === 'issue'} icon={<Send className="size-5" />} onClick={issue}>إصدار</Button>
+              {!isDesktop && <Button variant="secondary" className="shrink-0" aria-label={tr('معاينة')} icon={<Eye className="size-5" />} onClick={() => setPreviewOpen(true)}><span className="max-[420px]:hidden">{tr('معاينة')}</span></Button>}
+              <Button variant="secondary" className="min-w-0 flex-1 lg:flex-none" loading={saving === 'save'} icon={<Save className="size-5" />} onClick={saveDraft}>{tr('مسودة')}</Button>
+              <Button variant="success" className="min-w-0 flex-1" loading={saving === 'issue'} icon={<Send className="size-5" />} onClick={issue}>{tr('إصدار')}</Button>
             </div>
           </div>
         </div>
         {isDesktop && (
           <div className="sticky top-6 self-start">
             <div className="mb-2 flex items-center justify-between px-1">
-              <span className="text-[15px] font-bold text-gray-800">معاينة مباشرة</span>
-              <span className="text-xs text-gray-500">بتتحدث وإنت عم تكتب</span>
+              <span className="text-[15px] font-bold text-gray-800">{tr('معاينة مباشرة')}</span>
+              <span className="text-xs text-gray-500">{tr('بتتحدث وإنت عم تكتب')}</span>
             </div>
             <div className="max-h-[calc(100dvh-9rem)] overflow-y-auto rounded-2xl bg-gray-100 p-3">
               <PdfPreview blob={previewBlob} loading={previewLoading} />
@@ -459,7 +460,7 @@ export default function InvoiceEditor() {
         )}
       </div>
 
-      <Sheet open={previewOpen} onClose={() => setPreviewOpen(false)} title="معاينة" wide>
+      <Sheet open={previewOpen} onClose={() => setPreviewOpen(false)} title={tr('معاينة')} wide>
         <div className="rounded-2xl bg-gray-100 p-2"><PdfPreview blob={previewBlob} loading={previewLoading} /></div>
       </Sheet>
 
@@ -487,15 +488,15 @@ function ClientPicker({ open, onClose, clients, selected, onPick, onNew }: { ope
   useEffect(() => { if (open) setQ(''); }, [open]);
   const list = clients.filter((c) => !q.trim() || [c.company, c.contact, c.city, c.email].some((v) => (v || '').toLowerCase().includes(q.trim().toLowerCase())));
   return (
-    <Sheet open={open} onClose={onClose} title="اختار العميل">
+    <Sheet open={open} onClose={onClose} title={tr('اختار العميل')}>
       <div className="sticky top-0 z-10 -mx-5 bg-white px-5 pb-3">
         <div className="relative">
           <Search className="pointer-events-none absolute inset-y-0 start-3.5 my-auto size-4.5 text-gray-400" />
-          <input className="field !ps-10" placeholder="بحث…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus={window.matchMedia('(min-width: 1024px)').matches} />
+          <input className="field !ps-10" placeholder={tr('بحث…')} value={q} onChange={(e) => setQ(e.target.value)} autoFocus={window.matchMedia('(min-width: 1024px)').matches} />
         </div>
       </div>
       <button type="button" onClick={onNew} className="group mb-2 flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-brand-200 p-3 text-start font-semibold text-brand-700 hover:bg-brand-50">
-        <UserPlus className="icon-pop size-5" /> عميل جديد
+        <UserPlus className="icon-pop size-5" /> {tr('عميل جديد')}
       </button>
       <div className="divide-y divide-gray-100">
         {list.map((c) => (
@@ -508,7 +509,7 @@ function ClientPicker({ open, onClose, clients, selected, onPick, onNew }: { ope
             {selected === c.id && <Check className="size-5 text-brand-600" />}
           </button>
         ))}
-        {list.length === 0 && <div className="py-6 text-center text-sm text-gray-500">ما لقيت عميل بهالاسم</div>}
+        {list.length === 0 && <div className="py-6 text-center text-sm text-gray-500">{tr('ما لقيت عميل بهالاسم')}</div>}
       </div>
     </Sheet>
   );

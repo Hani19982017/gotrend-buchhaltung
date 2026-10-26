@@ -8,6 +8,7 @@ import { FOLDERS, METHODS, centsToInput, parseAmount, todayIso, ymLabel, folderL
 import { prepareUpload } from '../lib/image';
 import { captureStore } from '../lib/captureStore';
 import { Button, Card, Field, Loading, ErrorBox, PageHeader, Chips, useUi, IconButton } from '../components/ui';
+import { isRtl, tr } from '../lib/i18n';
 
 type Draft = {
   folder: Folder;
@@ -94,7 +95,7 @@ export default function EntryPage() {
       const r = await api<{ entry: Entry; duplicates: unknown[] }>(`/entries/${id}/files`, { form: fd });
       qc.setQueryData(['entry', id], r.entry);
       qc.invalidateQueries({ queryKey: ['month'] });
-      toast(r.duplicates.length ? 'انضاف — بس انتبه، هالملف مرفوع قبل بمكان تاني' : 'انضاف الملف', r.duplicates.length ? 'info' : 'success');
+      toast(r.duplicates.length ? tr('انضاف — بس انتبه، هالملف مرفوع قبل بمكان تاني') : tr('انضاف الملف'), r.duplicates.length ? 'info' : 'success');
     } catch (e: any) {
       toast(e.message, 'error');
     } finally {
@@ -113,13 +114,13 @@ export default function EntryPage() {
   };
 
   const validate = () => {
-    if (!d.date) return 'اختار التاريخ';
+    if (!d.date) return tr('اختار التاريخ');
     if (d.folder !== 'bank') {
       const a = parseAmount(d.amount);
-      if (a === null || a <= 0) return 'اكتب المبلغ';
+      if (a === null || a <= 0) return tr('اكتب المبلغ');
     }
-    if (d.folder !== 'bank' && !d.vendor.trim()) return d.folder === 'income' ? 'اكتب اسم العميل' : 'اكتب من وين اشتريت (المتجر أو الشركة)';
-    if (d.folder === 'bank' && isNew && !newFiles.length) return 'ارفع ملف كشف الحساب';
+    if (d.folder !== 'bank' && !d.vendor.trim()) return d.folder === 'income' ? tr('اكتب اسم العميل') : tr('اكتب من وين اشتريت (المتجر أو الشركة)');
+    if (d.folder === 'bank' && isNew && !newFiles.length) return tr('ارفع ملف كشف الحساب');
     return null;
   };
 
@@ -144,14 +145,14 @@ export default function EntryPage() {
         captureStore.clear();
         qc.invalidateQueries({ queryKey: ['month'] });
         qc.invalidateQueries({ queryKey: ['vendors'] });
-        if (r.duplicates.length) toast('انحفظ — بس انتبه، هالملف مرفوع قبل. تأكد إنو مو مكرر', 'info');
-        else toast(`انحفظ بـ ${folderShort(d.folder)} · ${ymLabel(ym)}`);
+        if (r.duplicates.length) toast(tr('انحفظ — بس انتبه، هالملف مرفوع قبل. تأكد إنو مو مكرر'), 'info');
+        else toast(tr('انحفظ بـ {0} · {1}', [folderShort(d.folder), ymLabel(ym)]));
         nav(`/month/${ym}`, { replace: true });
       } else {
         await api(`/entries/${id}`, { method: 'PUT', body: { ...d, vendor: d.vendor.trim(), amount, subscription_id: ['subscription', 'other'].includes(d.folder) && d.subscription_id ? d.subscription_id : null } });
         qc.invalidateQueries({ queryKey: ['month'] });
         qc.invalidateQueries({ queryKey: ['entry', id] });
-        toast('انحفظت التعديلات');
+        toast(tr('انحفظت التعديلات'));
         nav(-1);
       }
     } catch (e: any) {
@@ -162,11 +163,11 @@ export default function EntryPage() {
   };
 
   const remove = async () => {
-    if (!(await confirm({ title: 'حذف الإيصال؟', text: 'بيروح على سلة المحذوفات، وفيك ترجّعو من الإعدادات.', confirm: 'حذف', danger: true }))) return;
+    if (!(await confirm({ title: tr('حذف الإيصال؟'), text: tr('بيروح على سلة المحذوفات، وفيك ترجّعو من الإعدادات.'), confirm: tr('حذف'), danger: true }))) return;
     try {
       await api(`/entries/${id}`, { method: 'DELETE' });
       qc.invalidateQueries({ queryKey: ['month'] });
-      toast('انحذف (موجود بسلة المحذوفات)');
+      toast(tr('انحذف (موجود بسلة المحذوفات)'));
       nav(-1);
     } catch (e: any) {
       toast(e.message, 'error');
@@ -174,7 +175,7 @@ export default function EntryPage() {
   };
 
   const removeFile = async (fileId: number) => {
-    if (!(await confirm({ title: 'حذف هالملف؟', text: 'الملف رح ينحذف نهائياً من هالإيصال.', confirm: 'حذف', danger: true }))) return;
+    if (!(await confirm({ title: tr('حذف هالملف؟'), text: tr('الملف رح ينحذف نهائياً من هالإيصال.'), confirm: tr('حذف'), danger: true }))) return;
     try {
       const e = await api<Entry>(`/entries/${id}/files/${fileId}`, { method: 'DELETE' });
       qc.setQueryData(['entry', id], e);
@@ -185,21 +186,21 @@ export default function EntryPage() {
   };
 
   if (!isNew && entryQ.isLoading) return <Loading />;
-  if (!isNew && entryQ.error) return <><PageHeader back title="إيصال" /><ErrorBox error={entryQ.error} /></>;
+  if (!isNew && entryQ.error) return <><PageHeader back title={tr('إيصال')} /><ErrorBox error={entryQ.error} /></>;
   const existingFiles = entryQ.data?.files || [];
   const isIncome = d.folder === 'income';
   const isBank = d.folder === 'bank';
 
   return (
     <div className="mx-auto max-w-2xl animate-fade-up">
-      <PageHeader back title={isNew ? 'إيصال جديد' : 'تفاصيل الإيصال'}
-        actions={!isNew && <IconButton label="حذف" onClick={remove} className="text-red-600 hover:bg-red-50"><Trash2 className="size-5" /></IconButton>} />
+      <PageHeader back title={isNew ? tr('إيصال جديد') : tr('تفاصيل الإيصال')}
+        actions={!isNew && <IconButton label={tr('حذف')} onClick={remove} className="text-red-600 hover:bg-red-50"><Trash2 className="size-5" /></IconButton>} />
 
       {/* Files */}
       <Card className="mb-4 p-4">
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-[13px] font-semibold text-gray-700">{isBank ? 'ملف كشف الحساب' : 'الإيصال / الفاتورة'}</span>
-          <span className="text-xs text-gray-400">صور أو PDF</span>
+          <span className="text-[13px] font-semibold text-gray-700">{isBank ? tr('ملف كشف الحساب') : tr('الإيصال / الفاتورة')}</span>
+          <span className="text-xs text-gray-400">{tr('صور أو PDF')}</span>
         </div>
         <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none">
           {existingFiles.map((f) => (
@@ -216,8 +217,8 @@ export default function EntryPage() {
                 )}
               </a>
               <div className="absolute inset-x-1 bottom-1 flex justify-between">
-                <button aria-label="تحميل" onClick={() => downloadFrom(`/files/${f.id}?download=1`, f.original_name)} className="flex size-7 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow"><Download className="size-3.5" /></button>
-                <button aria-label="حذف الملف" onClick={() => removeFile(f.id)} className="flex size-7 items-center justify-center rounded-full bg-white/90 text-red-600 shadow"><X className="size-3.5" /></button>
+                <button aria-label={tr('تحميل')} onClick={() => downloadFrom(`/files/${f.id}?download=1`, f.original_name)} className="flex size-7 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow"><Download className="size-3.5" /></button>
+                <button aria-label={tr('حذف الملف')} onClick={() => removeFile(f.id)} className="flex size-7 items-center justify-center rounded-full bg-white/90 text-red-600 shadow"><X className="size-3.5" /></button>
               </div>
             </div>
           ))}
@@ -231,69 +232,69 @@ export default function EntryPage() {
                   <span className="line-clamp-2 text-[11px] font-semibold" dir="ltr">{p.f.name}</span>
                 </div>
               )}
-              <button aria-label="شيل" onClick={() => setNewFiles((x) => x.filter((_, j) => j !== i))} className="absolute top-1.5 end-1.5 flex size-7 items-center justify-center rounded-full bg-gray-900/70 text-white"><X className="size-4" /></button>
+              <button aria-label={tr('شيل')} onClick={() => setNewFiles((x) => x.filter((_, j) => j !== i))} className="absolute top-1.5 end-1.5 flex size-7 items-center justify-center rounded-full bg-gray-900/70 text-white"><X className="size-4" /></button>
             </div>
           ))}
           <button type="button" onClick={() => pick(true)} className="group flex h-36 w-28 shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-brand-200 bg-brand-50/50 text-brand-700 transition hover:bg-brand-50 active:scale-95">
             <Camera className="icon-pop size-7" />
-            <span className="text-xs font-bold">{existingFiles.length + newFiles.length ? 'صفحة كمان' : 'صوّر'}</span>
+            <span className="text-xs font-bold">{existingFiles.length + newFiles.length ? tr('صفحة كمان') : tr('صوّر')}</span>
           </button>
           <button type="button" onClick={() => pick(false)} className="group flex h-36 w-28 shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-gray-200 text-gray-600 transition hover:bg-gray-50 active:scale-95">
             <Paperclip className="icon-pop size-7" />
-            <span className="text-xs font-bold">ملف / PDF</span>
+            <span className="text-xs font-bold">{tr('ملف / PDF')}</span>
           </button>
         </div>
       </Card>
 
       {/* Fields */}
       <Card className="space-y-4 p-4">
-        <Field label="المجلد" group>
+        <Field label={tr('المجلد')} group>
           <Chips value={d.folder} onChange={(v) => set('folder', v)} options={FOLDERS.map((f) => ({ value: f.key, label: f.short }))} />
         </Field>
 
         {!isBank && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label={isIncome ? 'المبلغ المستلم' : 'المبلغ (شامل الضريبة)'}>
+            <Field label={isIncome ? tr('المبلغ المستلم') : tr('المبلغ (شامل الضريبة)')}>
               <div className="relative">
                 <input ref={amountRef} className="field num !pr-10 text-left text-2xl font-bold" inputMode="decimal" placeholder="0,00" value={d.amount}
                   onChange={(e) => set('amount', e.target.value)} dir="ltr" />
                 <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-lg font-bold text-gray-400">€</span>
               </div>
             </Field>
-            <Field label={isIncome ? 'العميل' : 'من وين؟ (المتجر / الشركة)'}>
-              <input className="field" list="gt-vendors" value={d.vendor} onChange={(e) => onVendor(e.target.value)} placeholder={isIncome ? 'اسم العميل' : 'مثلاً: Amazon, MediaMarkt'} autoComplete="off" />
+            <Field label={isIncome ? tr('العميل') : tr('من وين؟ (المتجر / الشركة)')}>
+              <input className="field" list="gt-vendors" value={d.vendor} onChange={(e) => onVendor(e.target.value)} placeholder={isIncome ? tr('اسم العميل') : tr('مثلاً: Amazon, MediaMarkt')} autoComplete="off" />
               <datalist id="gt-vendors">{(vendorsQ.data || []).map((v) => <option key={v.vendor} value={v.vendor} />)}</datalist>
             </Field>
           </div>
         )}
 
-        <Field label="التاريخ" hint={<span className="inline-flex items-center gap-1"><CalendarDays className="size-3.5" /> رح ينحفظ بـ <b className="text-gray-700">{ymLabel(ym)}</b> ← {folderLabel(d.folder)}</span>}>
+        <Field label={tr('التاريخ')} hint={<span className="inline-flex items-center gap-1"><CalendarDays className="size-3.5" /> {tr('رح ينحفظ بـ')} <b className="text-gray-700">{ymLabel(ym)}</b> {isRtl ? '←' : '→'} {folderLabel(d.folder)}</span>}>
           <input type="date" className="field" value={d.date} onChange={(e) => set('date', e.target.value)} required />
         </Field>
 
         {!isBank && (
-          <Field label={isIncome ? 'طريقة الاستلام' : 'طريقة الدفع'} group>
+          <Field label={isIncome ? tr('طريقة الاستلام') : tr('طريقة الدفع')} group>
             <Chips value={d.payment_method} onChange={(v) => set('payment_method', v)} options={METHODS.map((m) => ({ value: m.key, label: m.label }))} />
           </Field>
         )}
 
         {['subscription', 'other'].includes(d.folder) && subs.length > 0 && (
-          <Field label="تابع لاشتراك ثابت؟" hint="بيعلّم الاشتراك كمكتمل بقائمة الشهر">
+          <Field label={tr('تابع لاشتراك ثابت؟')} hint={tr('بيعلّم الاشتراك كمكتمل بقائمة الشهر')}>
             <select className="field" value={d.subscription_id} onChange={(e) => onSub(e.target.value)}>
-              <option value="">لا</option>
+              <option value="">{tr('لا')}</option>
               {subs.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </Field>
         )}
 
         {!showMore ? (
-          <button type="button" onClick={() => setShowMore(true)} className="text-sm font-semibold text-brand-600">+ وصف أو ملاحظة</button>
+          <button type="button" onClick={() => setShowMore(true)} className="text-sm font-semibold text-brand-600">{tr('+ وصف أو ملاحظة')}</button>
         ) : (
           <>
-            <Field label="الوصف" hint="شو اشتريت؟ بيساعد المحاسب">
-              <input className="field" value={d.description} onChange={(e) => set('description', e.target.value)} placeholder="مثلاً: شاشة للمكتب" />
+            <Field label={tr('الوصف')} hint={tr('شو اشتريت؟ بيساعد المحاسب')}>
+              <input className="field" value={d.description} onChange={(e) => set('description', e.target.value)} placeholder={tr('مثلاً: شاشة للمكتب')} />
             </Field>
-            <Field label="ملاحظة داخلية">
+            <Field label={tr('ملاحظة داخلية')}>
               <textarea className="field" rows={2} value={d.notes} onChange={(e) => set('notes', e.target.value)} />
             </Field>
           </>
@@ -302,13 +303,13 @@ export default function EntryPage() {
 
       <div className="safe-bottom sticky bottom-[calc(4.6rem+env(safe-area-inset-bottom))] z-30 mt-4 lg:bottom-4">
         <Button size="lg" block loading={saving} onClick={save} icon={isNew ? <Check className="size-5" /> : <Save className="size-5" />} className="h-14 text-[17px] shadow-xl">
-          {isNew ? 'حفظ' : 'حفظ التعديلات'}
+          {isNew ? tr('حفظ') : tr('حفظ التعديلات')}
         </Button>
       </div>
       {!isNew && entryQ.data && (
         <p className="mt-3 text-center text-xs text-gray-400">
-          أُضيف {entryQ.data.created_at.slice(0, 10).split('-').reverse().join('.')}
-          {existingFiles.length > 0 && <> · <a className="inline-flex items-center gap-0.5" href={`/api/files/${existingFiles[0].id}`} target="_blank" rel="noreferrer">فتح الملف <ExternalLink className="size-3" /></a></>}
+          {tr('أُضيف')} {entryQ.data.created_at.slice(0, 10).split('-').reverse().join('.')}
+          {existingFiles.length > 0 && <> · <a className="inline-flex items-center gap-0.5" href={`/api/files/${existingFiles[0].id}`} target="_blank" rel="noreferrer">{tr('فتح الملف')} <ExternalLink className="size-3" /></a></>}
         </p>
       )}
     </div>

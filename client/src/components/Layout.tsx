@@ -6,12 +6,13 @@ import { captureStore } from '../lib/captureStore';
 import { currentYm, defaultDateFor } from '../lib/format';
 import { api } from '../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
+import { tr } from '../lib/i18n';
 
 const NAV = [
-  { to: '/month', label: 'الشهر', icon: CalendarDays },
-  { to: '/invoices', label: 'الفواتير', icon: FileText },
-  { to: '/clients', label: 'العملاء', icon: Users },
-  { to: '/settings', label: 'الإعدادات', icon: SettingsIcon },
+  { to: '/month', label: tr('الشهر'), icon: CalendarDays },
+  { to: '/invoices', label: tr('الفواتير'), icon: FileText },
+  { to: '/clients', label: tr('العملاء'), icon: Users },
+  { to: '/settings', label: tr('الإعدادات'), icon: SettingsIcon },
 ];
 
 export function Logo({ className }: { className?: string }) {
@@ -79,11 +80,11 @@ export default function Layout() {
   };
 
   const actions = [
-    { label: 'صوّر إيصال', sub: 'بالكاميرا فوراً', icon: Camera, color: 'bg-brand-600 text-white', htmlFor: 'gt-cam' },
-    { label: 'ارفع ملف', sub: 'صورة أو PDF', icon: Paperclip, color: 'bg-sky-100 text-sky-700', htmlFor: 'gt-file' },
-    { label: 'مصروف بدون ملف', sub: 'إدخال يدوي', icon: PenLine, color: 'bg-amber-100 text-amber-700', onClick: () => go(`/entry/new?date=${defaultDateFor(capture.viewedYm())}`) },
-    { label: 'فاتورة جديدة', sub: 'لعميل', icon: Receipt, color: 'bg-emerald-100 text-emerald-700', onClick: () => go('/invoices/new') },
-    { label: 'عرض سعر', sub: 'Angebot', icon: FileSignature, color: 'bg-violet-100 text-violet-700', onClick: () => go('/invoices/new?kind=quote') },
+    { label: tr('صوّر إيصال'), sub: tr('بالكاميرا فوراً'), icon: Camera, color: 'bg-brand-600 text-white', htmlFor: 'gt-cam' },
+    { label: tr('ارفع ملف'), sub: tr('صورة أو PDF'), icon: Paperclip, color: 'bg-sky-100 text-sky-700', htmlFor: 'gt-file' },
+    { label: tr('مصروف بدون ملف'), sub: tr('إدخال يدوي'), icon: PenLine, color: 'bg-amber-100 text-amber-700', onClick: () => go(`/entry/new?date=${defaultDateFor(capture.viewedYm())}`) },
+    { label: tr('فاتورة جديدة'), sub: tr('لعميل'), icon: Receipt, color: 'bg-emerald-100 text-emerald-700', onClick: () => go('/invoices/new') },
+    { label: tr('عرض سعر'), sub: 'Angebot', icon: FileSignature, color: 'bg-violet-100 text-violet-700', onClick: () => go('/invoices/new?kind=quote') },
   ];
 
   return (
@@ -95,7 +96,7 @@ export default function Layout() {
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-e border-gray-200/70 bg-white/70 px-4 py-6 backdrop-blur lg:flex">
         <NavLink to="/month" className="mb-7 px-2"><Logo /></NavLink>
         <button onClick={() => setSheet(true)} className="group mb-6 flex h-12 items-center justify-center gap-2 rounded-2xl bg-brand-600 font-bold text-white shadow-[0_8px_20px_-8px_rgb(79_70_229/0.7)] transition hover:bg-brand-700 active:scale-[0.97]">
-          <Plus className="icon-pop size-5" /> إضافة
+          <Plus className="icon-pop size-5" /> {tr('إضافة')}
         </button>
         <nav className="flex flex-col gap-1">
           {NAV.map((n) => (
@@ -105,7 +106,7 @@ export default function Layout() {
           ))}
         </nav>
         <button onClick={logout} className="group mt-auto flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-100">
-          <LogOut className="icon-pop size-4.5" /> تسجيل خروج
+          <LogOut className="icon-pop size-4.5" /> {tr('تسجيل خروج')}
         </button>
       </aside>
 
@@ -118,7 +119,7 @@ export default function Layout() {
         <div className="mx-auto grid max-w-lg grid-cols-5 items-end px-2 pt-1.5 pb-1">
           {NAV.slice(0, 2).map((n) => <NavItem key={n.to} {...n} />)}
           <div className="flex justify-center">
-            <button aria-label="إضافة" onClick={() => setSheet(true)} className="group -mt-7 flex size-15 items-center justify-center rounded-full bg-brand-600 text-white shadow-[0_10px_24px_-8px_rgb(79_70_229/0.8)] ring-4 ring-white transition active:scale-90">
+            <button aria-label={tr('إضافة')} onClick={() => setSheet(true)} className="group -mt-7 flex size-15 items-center justify-center rounded-full bg-brand-600 text-white shadow-[0_10px_24px_-8px_rgb(79_70_229/0.8)] ring-4 ring-white transition active:scale-90">
               <Plus className="icon-pop size-7" strokeWidth={2.5} />
             </button>
           </div>
@@ -126,7 +127,7 @@ export default function Layout() {
         </div>
       </nav>
 
-      <Sheet open={sheet} onClose={() => setSheet(false)} title="شو بدك تضيف؟">
+      <Sheet open={sheet} onClose={() => setSheet(false)} title={tr('شو بدك تضيف؟')}>
         <div className="grid grid-cols-2 gap-2.5 pt-1">
           {actions.map((a, i) => {
             const inner = (
@@ -142,7 +143,7 @@ export default function Layout() {
                 {i === 0 ? (
                   <>
                     <span className={cx('icon-pop flex size-12 shrink-0 items-center justify-center rounded-2xl', a.color)}><a.icon className="size-6" /></span>
-                    <span><span className="block text-[17px] font-bold text-gray-900">{a.label}</span><span className="block text-xs text-gray-500">{a.sub} — بينحط بشهرو ومجلدو</span></span>
+                    <span><span className="block text-[17px] font-bold text-gray-900">{a.label}</span><span className="block text-xs text-gray-500">{a.sub} {tr('— بينحط بشهرو ومجلدو')}</span></span>
                   </>
                 ) : inner}
               </label>

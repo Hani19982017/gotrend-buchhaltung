@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, X, AlertTriangle, Info, Loader2 } from 'lucide-react';
 import { fmtEur } from '../lib/format';
+import { tr, lang, setLang, LANGS, type Lang } from '../lib/i18n';
 
 export function cx(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(' ');
@@ -52,8 +53,8 @@ export function PageHeader({ title, subtitle, back, actions }: { title: React.Re
   return (
     <div className="mb-5 flex items-start gap-2">
       {back && (
-        <IconButton label="رجوع" className="-ms-2 mt-0.5 shrink-0" onClick={() => (typeof back === 'string' ? nav(back) : nav(-1))}>
-          <ArrowRight className="size-5" />
+        <IconButton label={tr('رجوع')} className="-ms-2 mt-0.5 shrink-0" onClick={() => (typeof back === 'string' ? nav(back) : nav(-1))}>
+          <ArrowRight className="flip-ltr size-5" />
         </IconButton>
       )}
       <div className="min-w-0 flex-1">
@@ -137,6 +138,16 @@ export function Segmented<T extends string>({ value, onChange, options, classNam
   );
 }
 
+/** Renders a translated sentence where **text** parts are bold. */
+export function Rich({ text }: { text: string }) {
+  return <>{text.split('**').map((part, i) => (i % 2 ? <b key={i}>{part}</b> : <React.Fragment key={i}>{part}</React.Fragment>))}</>;
+}
+
+/** Arabic / Deutsch switch. Switching reloads the app in the chosen language. */
+export function LanguageSwitch({ className }: { className?: string }) {
+  return <Segmented<Lang> size="sm" className={className} value={lang} onChange={setLang} options={LANGS} />;
+}
+
 export function Chips<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: React.ReactNode; icon?: React.ReactNode }[] }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -163,7 +174,7 @@ export function Spinner({ className }: { className?: string }) {
   return <Loader2 className={cx('size-6 animate-spin text-brand-600', className)} />;
 }
 
-export function Loading({ label = 'لحظة…' }: { label?: string }) {
+export function Loading({ label = tr('لحظة…') }: { label?: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-500">
       <Spinner />
@@ -184,7 +195,7 @@ export function Empty({ icon, title, text, action }: { icon?: React.ReactNode; t
 }
 
 export function ErrorBox({ error }: { error: unknown }) {
-  const msg = (error as any)?.message || 'صار خطأ';
+  const msg = (error as any)?.message || tr('صار خطأ');
   return (
     <div className="flex items-start gap-2 rounded-2xl bg-red-50 p-4 text-sm text-red-700">
       <AlertTriangle className="mt-0.5 size-4 shrink-0" />
@@ -215,12 +226,12 @@ export function Sheet({ open, onClose, title, children, footer, wide }: { open: 
         {title && (
           <div className="flex items-center justify-between px-5 pb-2 pt-3 lg:pt-5">
             <h3 className="text-lg font-bold">{title}</h3>
-            <IconButton label="إغلاق" onClick={onClose} className="-me-2">
+            <IconButton label={tr('إغلاق')} onClick={onClose} className="-me-2">
               <X className="size-5" />
             </IconButton>
           </div>
         )}
-        <div className="overflow-y-auto px-5 pb-5">{children}</div>
+        <div className="min-h-0 overflow-y-auto px-5 pb-5">{children}</div>
         {footer && <div className="safe-bottom border-t border-gray-100 px-5 py-3">{footer}</div>}
       </div>
     </div>,
@@ -264,8 +275,8 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
       <Sheet open={!!dlg} onClose={() => close(false)} title={dlg?.title}
         footer={
           <div className="flex gap-2">
-            <Button variant="secondary" block onClick={() => close(false)}>{dlg?.cancel || 'إلغاء'}</Button>
-            <Button variant={dlg?.danger ? 'danger' : 'primary'} block disabled={!!dlg?.input?.required && !inputVal.trim()} onClick={() => close(inputVal.trim() || 'ok')}>{dlg?.confirm || 'تأكيد'}</Button>
+            <Button variant="secondary" block onClick={() => close(false)}>{dlg?.cancel || tr('إلغاء')}</Button>
+            <Button variant={dlg?.danger ? 'danger' : 'primary'} block disabled={!!dlg?.input?.required && !inputVal.trim()} onClick={() => close(inputVal.trim() || 'ok')}>{dlg?.confirm || tr('تأكيد')}</Button>
           </div>
         }>
         {dlg?.text && <div className="text-[15px] leading-relaxed text-gray-600">{dlg.text}</div>}
@@ -289,7 +300,7 @@ export function useAsync() {
       if (success) toast(success);
       return r;
     } catch (e: any) {
-      toast(e?.message || 'صار خطأ', 'error');
+      toast(e?.message || tr('صار خطأ'), 'error');
       return undefined;
     } finally {
       setBusy(false);
