@@ -1,0 +1,23 @@
+# Render Blueprint — one web service with a persistent disk (data stays safe across deploys)
+services:
+  - type: web
+    name: gotrend-buchhaltung
+    runtime: node
+    region: frankfurt
+    plan: starter
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data
+      - key: SETUP_CODE
+        generateValue: true
+    disk:
+      name: gotrend-data
+      mountPath: /var/data
+      sizeGB: 1
